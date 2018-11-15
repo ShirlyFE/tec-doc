@@ -1,0 +1,376 @@
+A strong object-oriented programming background in Java
+Experience building adaptive/responsive web pages for desktop and mobile devices.
+* Experience with Ajax, SOAP/REST, XML, JSON, RMI.
+    Web服务技术就有SOAP（Simple Object Access Protocol，简单对象访问协议）和REST（Representational State Transfer，表示性状态转移）这两种方案
+
+Intimate Knowledge of standards and commitment to producing W3C compliant markup.
+Good understanding of coding best practices, Design Patterns and Object Oriented Design.
+Understanding of the browser security sandbox.
+
+
+* Choose the framework
+    - Is this a good tool per se?
+        How mature is it and who’s behind it?
+            you should be careful when adopting tools which have not yet matured due to certain risks:
+                The tool might be buggy and unstable.
+                It might be unexpectedly abandoned by the vendor.
+                There might not be a large knowledge base or community available in case you need help.
+        What kind of features does it have?
+            React Features:
+                No dependency injection;
+                Instead of classic templates it has JSX, an XML-like language built on top of JavaScript;
+                XSS protection;
+                Utilities for unit-testing components.
+            React related tools:
+                React-router for routing.
+                Fetch (or axios) for HTTP requests;
+                A wide variety of techniques for CSS encapsulation;
+                Enzyme for additional unit-testing utilities.
+        What architecture, development paradigms, and patterns does it employ?
+            higher-level concepts with REACT:
+                JSX( Instead of following a classical approach of separating markup and logic, React decided to combine them within components using an XML-like language that allows you to write markup directly in your JavaScript code.),
+                Flow(Flow is a type-checking tool for JavaScript also developed by Facebook),
+                Redux(a library that helps manage state changes in a clear manner. It was inspired by Flux but with some simplifications,The key idea of Redux is that the whole state of the application is represented by a single object, which is mutated by functions called reducers. Reducers themselves are pure functions and are implemented separately from the components. This enables better separation of concerns and testability.).
+            higher-level concepts with Angular:
+                TypeScript(TypeScript is a new language built on top of JavaScript and developed by Microsoft. It’s a superset of JavaScript ES2015 and includes features from newer versions of the language. You can use it instead of Babel to write state of the art JavaScript. It also features an extremely powerful typing system that can statically analyze your code by using a combination of annotations and type inference.)
+        What is the ecosystem around it?
+    - Will it work well for my use case?
+        Will I and my colleagues be able to learn this tool with ease?
+        Does is fit well with my project?
+        What is the developer experience like?
+            -To get started, try answering these questions about your project and when you do, match the answers against what you’ve learned about the two frameworks. This list might not be complete, but should be enough to get you started:
+                How big is the project?
+                How long is it going to be maintained for?
+                Is all of the functionality clearly defined in advance or are you expected to be flexible?
+                If all of the features are already defined, what capabilities do you need?
+                Are the domain model and business logic complex?
+                What platforms are you targeting? Web, mobile, desktop?
+                Do you need server-side rendering? Is SEO important?
+                Will you be handling a lot of real-time event streams?
+                How big is your team?
+                How experienced are your developers and what is their background?
+                Are there any ready-made component libraries that you would like to use?
+
+
+
+* xss 攻击
+——————————————————————————————————————————————————————————————————————————————————————————————
+
+总体来说，XSS分三类，存储型XSS、反射型XSS、DOM-XSS。
+
+存储型XSS
+
+数据库中存有的存在XSS攻击的数据，返回给客户端。若数据未经过任何转义。被浏览器渲染。就可能导致XSS攻击；
+
+反射型XSS
+
+将用户输入的存在XSS攻击的数据，发送给后台，后台并未对数据进行存储，也未经过任何过滤，直接返回给客户端。被浏览器渲染。就可能导致XSS攻击；
+
+DOM-XSS
+
+
+* 依赖注入
+——————————————————————————————————————————————————————————————————————————————————————————————
+Angular算是将后端开发工程化引入前端的先驱之一,而Dependency injection依赖注入(后面简称为DI)又是Angular内部运作的核心功能
+依赖注入解决的正是如何有效组织代码依赖模块的问题
+
+DI最突出的好处在于开发可复用可测试的代码单元
+
+1. mutate 1: 
+    var router = function() {
+    return {
+        name: "Router"
+    }
+    }
+
+    var services = function() {
+    return {
+        name: "Service"
+    }
+    }
+
+    var injector = {
+        dependencies: {},
+        register: function(key, value) {
+            this.dependencies[key] = value;
+        },
+        resolve: function() {
+            var func, deps, scope, args = [], self = this;
+            if(typeof arguments[0] === 'string') {
+                func = arguments[1];
+                deps = arguments[0].replace(/ /g, '').split(',');
+                scope = arguments[2] || {};
+            } else {
+                func = arguments[0];
+                deps = func.toString().match(/^function\s*[^\(]*\(\s*([^\)]*)\)/m)[1].replace(/ /g, '').split(',');// m表示多行查找
+                scope = arguments[1] || {};
+            }
+            return function() {
+                var a = Array.prototype.slice.call(arguments, 0);
+                for(var i=0; i<deps.length; i++) {
+                    var d = deps[i];
+                    args.push(self.dependencies[d] && d != '' ? self.dependencies[d] : a.shift());
+                }
+                func.apply(scope || {}, args.concat(a));
+            }        
+        }
+    }
+
+    injector.register('router', router);
+    injector.register('service', services);
+
+    var doSomething = injector.resolve('router,,service', function(a, b, c) {
+        console.log('a().name : ', a().name);
+        console.log('b : ', b);
+        console.log('c().name : ', c().name);
+        console.log('arguments : ', arguments)
+    });
+
+    doSomething("Other", 'test arguments');
+
+2. mutate 2
+    var di = {
+        container: {}
+    };
+
+    di.service = function(name, Constructor) {
+        defineLazyProperty(name, () => new Constructor());
+    }; 
+    function defineLazyProperty(name, getter){
+        Object.defineProperty(di.container, name, {
+            configurable: true,
+            get: function() {
+                var obj = getter(container);
+                Object.defineProperty(di.container, name, {
+                    configurable: false,
+                    value: obj
+                });
+                return obj;
+            }
+        });
+    }
+
+    di.factory = function(name, factory) { return defineLazyProperty(name, factory); };
+
+    di.provider = function(name, Provider) { return defineLazyProperty(name, function(){ var provider = new Provider(); return provider.$get(); }); };
+
+    di.value = function(name, val) { return defineLazyProperty(name, () => val); };
+
+
+
+模块化解决方案
+——————————————————————————————————————————————————————————————————————————————————————————————
+模块就是实现特定功能的一组方法
+
+1. 只要把不同的函数（以及记录状态的变量）简单地放在一起，就算是一个模块
+    function m1(){
+　　　　//...
+　　}
+　　function m2(){
+　　　　//...
+　　}
+    这种做法的缺点很明显："污染"了全局变量，无法保证不与其他模块发生变量名冲突，而且模块成员之间看不出直接关系。
+
+2. 为解决污染全局变量的问题，把模块写成一个对象，所有的模块成员都放到这个对象里面
+    var module1 = new Object({
+　　　　_count : 0,
+　　　　m1 : function (){
+　　　　　　//...
+　　　　},
+　　　　m2 : function (){
+　　　　　　//...
+　　　　}
+　　});
+    缺点：会暴露所有模块成员，内部状态可以被外部改写
+
+3. 立即执行函数写法（Immediately-Invoked Function Expression，IIFE）
+    var module1 = (function(){
+　　　　var _count = 0;
+　　　　var m1 = function(){
+　　　　　　//...
+　　　　};
+　　　　var m2 = function(){
+　　　　　　//...
+　　　　};
+　　　　return {
+　　　　　　m1 : m1,
+　　　　　　m2 : m2
+　　　　};
+　　})();
+    这样不会暴露模块私有成员，也是js模块的基本写法
+4. 放大模式
+    var module1 = (function (mod){
+　　　　mod.m3 = function () {
+　　　　　　//...
+　　　　};
+　　　　return mod;
+　　})(module1);
+    缺点： 在浏览器环境中，模块的各个部分通常都是从网上获取的，有时无法知道哪个部分会先加载，第一个执行的部分有可能加载一个不存在空对象，这时就要采用"宽放大模式"
+
+5. 宽放大模式
+    var module1 = ( function (mod){
+　　　　//...
+　　　　return mod;
+　　})(window.module1 || {});
+6. CommonJs CommonJs在Node.js中用的较多，使用”require”来定义依赖，使用”module.exports”来定义模块
+    var dep1 = require('./dep1');
+    var dep2 = require('./dep2');
+    module.exports = function(){
+        // ...
+    }
+
+7. AMD Asynchronous Module Definition，异步模块定义。AMD形式被用于浏览器端，使用”define”来定义模块依赖：
+    //Calling define with a dependency array and a factory function
+    define(['dep1', 'dep2'], function (dep1, dep2) {
+        //Define the module value by returning a value.
+        return function () {};
+    });
+
+    背景： 浏览器端的模块，不能采用"同步加载"（synchronous），只能采用"异步加载"（asynchronous）-- 代表（require.js， curl.js）
+
+CMD Common Module Definition，通用模块定义 与AMD区别在与AMD是依赖关系前置，有该依赖就必须先加载依赖，CMD是按需加载。
+    // CMD
+    define(function(require, exports, module) {
+        var a = require('./a')
+        a.doSomething()
+        // 此处略去 100 行
+        var b = require('./b') // 依赖可以就近书写
+        b.doSomething()
+        // ...
+    })
+    代表（seajs）
+UMD Universal Module Definition，通用模块定义。可以用于浏览器端与Node.js端：
+    (function (root, factory) {
+     if (typeof define === 'function' && define.amd) {
+       // AMD. Register as an anonymous module.
+         define(['b'], factory);
+     } else if (typeof module === 'object' && module.exports) {
+       // Node. Does not work with strict CommonJS, but
+       // only CommonJS-like environments that support module.exports,
+       // like Node.
+       module.exports = factory(require('b'));
+     } else {
+       // Browser globals (root is window)
+       root.returnExports = factory(root.b);
+     }
+   }(this, function (b) {
+     //use b in some fashion.
+     // Just return a value to define the module export.
+     // This example returns an object, but the module
+     // can return a function as the exported value.
+     return {};
+   })); 
+ES6 ES6中自带原生的模块语法，使用关键字”export”来导出模块的公用api; 以关键字”import”来导入模块
+
+* 状态机原理与实践
+——————————————————————————————————————————————————————————————————————————————————————————————
+1. 有限状态机概述
+简单说，有限状态机是一种模型，模型都用来模拟事物，能够被有限状态机这种模型模拟的事物，一般都有以下特点：
+    *  状态总数（state）是有限的。
+    * 任一时刻，只处在一种状态之中。
+    * 某种条件下，会从一种状态转变（transition）到另一种状态。
+
+举例来说，网页上有一个菜单元素。鼠标悬停的时候，菜单显示；鼠标移开的时候，菜单隐藏。如果使用有限状态机描述，就是这个菜单只有两种状态（显示和隐藏），鼠标会引发状态转变。
+代码可以写成下面这样：
+
+　　var menu = {
+　　    
+　　　　// 当前状态
+　　　　currentState: 'hide',
+　　
+　　　　// 绑定事件
+　　　　initialize: function() {
+　　　　　　var self = this;
+　　　　　　self.on("hover", self.transition);
+　　　　},
+　　
+　　　　// 状态转换
+　　　　transition: function(event){
+　　　　　　switch(this.currentState) {
+　　　　　　　　case "hide":
+　　　　　　　　　　this.currentState = 'show';
+　　　　　　　　　　doSomething();
+　　　　　　　　　　break;
+　　　　　　　　case "show":
+　　　　　　　　　　this.currentState = 'hide';
+　　　　　　　　　　doSomething();
+　　　　　　　　　　break;
+　　　　　　　　default:
+　　　　　　　　　　console.log('Invalid State!');
+　　　　　　　　　　break;
+　　　　　　}
+　　　　}
+　　
+　　};
+　
+下面介绍一个有限状态机的函数库Javascript Finite State Machine。这个库非常好懂，可以帮助我们加深理解，而且功能一点都不弱。
+该库提供一个全局对象StateMachine，使用该对象的create方法，可以生成有限状态机的实例。
+
+　　var fsm = StateMachine.create();
+　　
+生成的时候，需要提供一个参数对象，用来描述实例的性质。比如，交通信号灯（红绿灯）可以这样描述：
+
+　　var fsm = StateMachine.create({
+　　
+　　　　initial: 'green',
+　　
+　　　　events: [
+　　　　　　{ name: 'warn',  from: 'green',  to: 'yellow' },
+　　　　　　{ name: 'stop', from: 'yellow', to: 'red' },
+　　　　　　{ name: 'ready',  from: 'red',    to: 'yellow' },
+　　　　　　{ name: 'go', from: 'yellow', to: 'green' }
+　　　　]
+　　
+　　});
+　　
+交通信号灯的初始状态（initial）为green，events属性是触发状态改变的各种事件，比如warn事件使得green状态变成yellow状态，stop事件使得yellow状态变成red状态等等。
+生成实例以后，就可以随时查询当前状态。
+* fsm.current ：返回当前状态。
+* fsm.is(s) ：返回一个布尔值，表示状态s是否为当前状态。
+* fsm.can(e) ：返回一个布尔值，表示事件e是否能在当前状态触发。
+* fsm.cannot(e) ：返回一个布尔值，表示事件e是否不能在当前状态触发。
+Javascript Finite State Machine允许为每个事件指定两个回调函数，以warn事件为例：
+* onbeforewarn：在warn事件发生之前触发。
+* onafterwarn（可简写成onwarn） ：在warn事件发生之后触发。
+同时，它也允许为每个状态指定两个回调函数，以green状态为例：
+* onleavegreen ：在离开green状态时触发。
+* onentergreen（可简写成ongreen） ：在进入green状态时触发。
+假定warn事件使得状态从green变为yellow，上面四类回调函数的发生顺序如下：onbeforewarn → onleavegreen → onenteryellow → onafterwarn。
+除了为每个事件和状态单独指定回调函数，还可以为所有的事件和状态指定通用的回调函数。
+* onbeforeevent ：任一事件发生之前触发。
+* onleavestate ：离开任一状态时触发。
+* onenterstate ：进入任一状态时触发。
+* onafterevent ：任一事件结束后触发。
+如果事件的回调函数里面有异步操作（比如与服务器进行Ajax通信），这时我们可能希望等到异步操作结束，再发生状态改变。这就要用到transition方法。
+
+　　fsm.onleavegreen = function(){
+　　　　light.fadeOut('slow', function() {
+　　　　　　fsm.transition();
+　　　　});
+　　　　return StateMachine.ASYNC;
+　　};
+　　
+上面代码的回调函数里面，有一个异步操作（light.fadeOut）。如果不希望状态立即改变，就要让回调函数返回StateMachine.ASYNC，表示状态暂时不改变；等到异步操作结束，再调用transition方法，使得状态发生改变。
+Javascript Finite State Machine还允许指定错误处理函数，当发生了当前状态不可能发生的事件时自动触发。
+
+　　var fsm = StateMachine.create({
+　　　　// ...
+　　　　error: function(eventName, from, to, args, errorCode, errorMessage) {
+　　　　　　return 'event ' + eventName + ': ' + errorMessage;
+　　　　},
+　　　　// ... 
+　　});
+　　
+比如，当前状态是green，理论上这时只可能发生warn事件。要是这时发生了stop事件，就会触发上面的错误处理函数。
+
+
+* sandbox of browser
+——————————————————————————————————————————————————————————————————————————————————————————————
+
+操作系统层面的沙盒的含义就是操作系统对进程的可访问的内存地址所做的限制，限制进程可访问的内存在其被分配的内存地址区间内，而不允许操作其他的内存地址，从而提供安全层面的防护。
+到浏览器层面，本质原理没多大变化，实践层面可能会根据浏览器环境有所变化，比如限制脚本操作本页面之外的其他页面的DOM，限制访问非同源文档，限制向非同源服务器发送ajax等等，
+目的依然是安全。以chromium为例。chromium是多进程架构，浏览器前端界面由browser进程管理，各个web page的tab属于renderer进程管理。
+chromium的sandbox是将renderer进程作为防护对象。browser进程会给每个renderer进程分配资源，但这些renderer进程只能访问被分配的资源，不能访问未被分配的资源。
+这里资源的概念比较广泛，具体到可访问的DOM（对应内存中的对象），或抽象到origin scope等。
+实现层面的话，可以类比Linux下文件系统的权限位，浏览器会对每个web page实现对应的权限位，
+w3c HTML规范里 [Sandbox](https://www.w3.org/WebPlatform/docs/html51/browsers.html#sandboxing) 有相关内容
